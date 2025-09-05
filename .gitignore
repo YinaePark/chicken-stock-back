@@ -57,3 +57,4 @@ coverage/
 # 기타
 .cache/
 .parcel-cache/
+reflect-metadata.d.ts
