@@ -19,6 +19,7 @@
     "@types/helmet": "^0.0.48",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.3.0",
+    "@types/pg": "^8.15.5",
     "eslint": "^9.34.0",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
@@ -34,7 +35,9 @@
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3",
     "redis": "^5.8.2",
+    "reflect-metadata": "^0.2.2",
     "socket.io": "^4.8.1",
+    "typeorm": "^0.3.26",
     "uuid": "^11.1.0"
   }
 }
