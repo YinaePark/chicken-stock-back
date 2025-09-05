@@ -1,5 +1,9 @@
 // src/app.ts - 메인 서버 파일
 import express from 'express';
+import 'reflect-metadata';
+import dotenv from 'dotenv';
+dotenv.config();
+import { AppDataSource } from './config/data-source';
 import gameRoutes from './routes/gameRoutes';
 
 const app = express();
@@ -41,9 +45,29 @@ app.use((req, res) => {
   });
 });
 
-// 서버 시작
-app.listen(PORT, () => {
-  console.log(`🚀 서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
-});
+// 서버 시작 (DB 연결 후 시작)
+console.log('DB config →', process.env.DATABASE_URL
+  ? { url: process.env.DATABASE_URL?.replace(/:(.*?)@/, ':***@') }
+  : {
+      host: process.env.PGHOST,
+      port: process.env.PGPORT,
+      user: process.env.PGUSER,
+      database: process.env.PGDATABASE,
+    }
+);
+
+AppDataSource.initialize()
+  .then(async () => {
+    console.log('✅ Database initialized');
+    await AppDataSource.runMigrations();
+    console.log('✅ Migrations executed');
+    app.listen(PORT, () => {
+      console.log(`🚀 서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
+    });
+  })
+  .catch((err: unknown) => {
+    console.error('DB 초기화 실패로 서버 시작을 중단합니다.', err);
+    process.exit(1);
+  });
 
 export default app;
