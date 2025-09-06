@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { GameEntity } from '../entities/GameEntity';
 import { PlayerEntity } from '../entities/PlayerEntity';
 import { UserEntity } from '../entities/UserEntity'; 
+import { StockTemplateEntity } from '../entities/StockTemplateEntity';
 dotenv.config();
 
 const connectionString = process.env.DATABASE_URL;
@@ -20,9 +21,9 @@ export const AppDataSource = new DataSource(
         url: connectionString,
         synchronize: true,
         logging: true,
-        entities: [GameEntity, PlayerEntity, UserEntity],
+        entities: [GameEntity, PlayerEntity, UserEntity, StockTemplateEntity],
         migrations: ['src/migrations/*.{ts,js}'],
-        migrationsRun: true,
+        migrationsRun: false,
       }
     : {
         type: 'postgres',
@@ -33,9 +34,9 @@ export const AppDataSource = new DataSource(
         database,
         synchronize: true,
         logging: true,
-        entities: [GameEntity, PlayerEntity, UserEntity],
+        entities: [GameEntity, PlayerEntity, UserEntity, StockTemplateEntity],
         migrations: ['src/migrations/*.{ts,js}'],
-        migrationsRun: true,
+        migrationsRun: false,
       }
 );
 
