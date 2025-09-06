@@ -1,10 +1,12 @@
 // src/app.ts - 메인 서버 파일
 import express from 'express';
+import swaggerUi from 'swagger-ui-express';
+import swaggerJSDoc from 'swagger-jsdoc';
 import 'reflect-metadata';
 import dotenv from 'dotenv';
 dotenv.config();
 import { AppDataSource } from './config/data-source';
-import gameRoutes from './routes/gameRoutes';
+import authRoutes from './routes/authRoutes';
 
 const app = express();
 const PORT = 3000;
@@ -23,8 +25,38 @@ app.get('/', (req, res) => {
   });
 });
 
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Game API',
+      version: '1.0.0',
+      description: 'Chicken Stock Game API',
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000',
+        description: 'Development server',
+      },
+    ],
+  components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+  },
+  apis: ['./src/routes/*.ts'], // API 파일 경로
+};
+
+const specs = swaggerJSDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
 // API 라우트 등록
-app.use('/api/games', gameRoutes);
+app.use('/api/auth', authRoutes);   
 
 // 헬스체크
 app.get('/api/health', (req, res) => {
@@ -55,6 +87,25 @@ console.log('DB config →', process.env.DATABASE_URL
       database: process.env.PGDATABASE,
     }
 );
+
+// 헬스체크
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 404 처리
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `경로를 찾을 수 없습니다: ${req.originalUrl}`,
+    timestamp: new Date()
+  });
+});
 
 AppDataSource.initialize()
   .then(async () => {
