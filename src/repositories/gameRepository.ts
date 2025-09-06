@@ -1,133 +1,121 @@
-import { Game, Player } from '../models/game';
+import { Repository } from 'typeorm';
 import { AppDataSource } from '../config/data-source';
-import { GameEntity } from '../entities/GameEntity';
-import { PlayerEntity } from '../entities/PlayerEntity';
+import { GameEntity, GameStatus } from '../entities/GameEntity';
 
 export class GameRepository {
-  private gameRepo = AppDataSource.getRepository(GameEntity);
-  private playerRepo = AppDataSource.getRepository(PlayerEntity);
+  private repository: Repository<GameEntity>;
 
-  // 게임 저장/업서트
-  async saveGame(game: Game): Promise<void> {
-    const entity = this.gameRepo.create({
-      id: game.id,
-      status: game.status,
-      maxPlayers: game.maxPlayers,
-      currentRound: game.currentRound,
-      totalRounds: game.totalRounds,
-      createdAt: game.createdAt,
-      startTime: game.startTime ?? null,
-      endTime: game.endTime ?? null,
+  constructor() {
+    this.repository = AppDataSource.getRepository(GameEntity);
+  }
+
+  async create(gameData: {
+    hostUserId: string;
+    roomCode: string;
+    maxPlayers?: number;
+    gameDuration?: number;
+    startCapital?: number;
+  }): Promise<GameEntity> {
+    const game = this.repository.create(gameData);
+    return await this.repository.save(game);
+  }
+
+  async findById(id: string): Promise<GameEntity | null> {
+    return await this.repository.findOne({ where: { id } });
+  }
+
+  async findByRoomCode(roomCode: string): Promise<GameEntity | null> {
+    return await this.repository.findOne({ where: { roomCode } });
+  }
+
+  async findWithPlayers(id: string): Promise<GameEntity | null> {
+    return await this.repository.findOne({
+      where: { id },
+      relations: ['players', 'players.user']
     });
-    await this.gameRepo.save(entity);
   }
 
-  // 게임 조회
-  async findGameById(gameId: string): Promise<Game | null> {
-    const g = await this.gameRepo.findOne({ where: { id: gameId } });
-    if (!g) return null;
-    const players = await this.findPlayersByGameId(gameId);
-    const game: any = {
-      id: g.id,
-      status: g.status,
-      players,
-      maxPlayers: g.maxPlayers,
-      currentRound: g.currentRound,
-      totalRounds: g.totalRounds,
-      createdAt: g.createdAt,
-    };
-    if (g.startTime) game.startTime = g.startTime;
-    if (g.endTime) game.endTime = g.endTime;
-    return game as Game;
-  }
-
-  // 모든 게임 조회
-  async findAllGames(): Promise<Game[]> {
-    const rows = await this.gameRepo.find();
-    const games: Game[] = [];
-    for (const g of rows) {
-      const players = await this.findPlayersByGameId(g.id);
-      const game: any = {
-        id: g.id,
-        status: g.status,
-        players,
-        maxPlayers: g.maxPlayers,
-        currentRound: g.currentRound,
-        totalRounds: g.totalRounds,
-        createdAt: g.createdAt,
-      };
-      if (g.startTime) game.startTime = g.startTime;
-      if (g.endTime) game.endTime = g.endTime;
-      games.push(game as Game);
-    }
-    return games;
-  }
-
-  // 대기 중인 게임 조회
-  async findWaitingGames(): Promise<Game[]> {
-    const rows = await this.gameRepo.find({ where: { status: 'WAITING' } as any });
-    const games: Game[] = [];
-    for (const g of rows) {
-      const players = await this.findPlayersByGameId(g.id);
-      const game: any = {
-        id: g.id,
-        status: g.status,
-        players,
-        maxPlayers: g.maxPlayers,
-        currentRound: g.currentRound,
-        totalRounds: g.totalRounds,
-        createdAt: g.createdAt,
-      };
-      if (g.startTime) game.startTime = g.startTime;
-      if (g.endTime) game.endTime = g.endTime;
-      games.push(game as Game);
-    }
-    return games;
-  }
-
-  // 플레이어 저장/업서트
-  async savePlayer(player: Player): Promise<void> {
-    const entity = this.playerRepo.create({
-      id: player.id,
-      gameId: player.gameId,
-      nickname: player.nickname,
-      cash: player.cash,
-      portfolio: player.portfolio,
-      totalValue: player.totalValue,
-      isConnected: player.isConnected,
-      joinedAt: player.joinedAt,
+  async findWaitingGames(): Promise<GameEntity[]> {
+    return await this.repository.find({
+      where: { status: GameStatus.WAITING },
+      relations: ['players'],
+      order: { createdAt: 'DESC' }
     });
-    await this.playerRepo.save(entity);
   }
 
-  // 플레이어 조회
-  async findPlayerById(playerId: string): Promise<Player | null> {
-    const p = await this.playerRepo.findOne({ where: { id: playerId } });
-    if (!p) return null;
-    return {
-      id: p.id,
-      gameId: p.gameId,
-      nickname: p.nickname,
-      cash: Number(p.cash),
-      portfolio: p.portfolio || {},
-      totalValue: Number(p.totalValue),
-      isConnected: p.isConnected,
-      joinedAt: p.joinedAt,
-    } as Player;
+  async findActiveGames(): Promise<GameEntity[]> {
+    return await this.repository.find({
+      where: { status: GameStatus.PLAYING },
+      relations: ['players'],
+      order: { startedAt: 'DESC' }
+    });
   }
 
-  // 게임의 모든 플레이어 조회
-  async findPlayersByGameId(gameId: string): Promise<Player[]> {
-    const rows = await this.playerRepo.find({ where: { gameId } });
-    return rows.map((p: PlayerEntity) => ({
-      id: p.id,
-      gameId: p.gameId,
-      nickname: p.nickname,
-      cash: Number(p.cash),
-      portfolio: p.portfolio || {},
-      totalValue: Number(p.totalValue),
-      isConnected: p.isConnected,
-      joinedAt: p.joinedAt,
-    } as Player));
+  async updateStatus(id: string, status: GameStatus): Promise<void> {
+    await this.repository.update(id, { status });
+  }
+
+  async startGame(id: string): Promise<void> {
+    await this.repository.update(id, {
+      status: GameStatus.PLAYING,
+      startedAt: new Date()
+    });
+  }
+
+  async endGame(id: string): Promise<void> {
+    await this.repository.update(id, {
+      status: GameStatus.FINISHED,
+      endedAt: new Date()
+    });
+  }
+
+  async updateRound(id: string, round: number): Promise<void> {
+    await this.repository.update(id, { currentRound: round });
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.repository.delete(id);
+  }
+
+  async generateUniqueRoomCode(): Promise<string> {
+    let roomCode: string;
+    let exists: boolean;
+    
+    do {
+      roomCode = this.generateRoomCode();
+      exists = await this.checkRoomCodeExists(roomCode);
+    } while (exists);
+    
+    return roomCode;
+  }
+
+  private generateRoomCode(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  private async checkRoomCodeExists(roomCode: string): Promise<boolean> {
+    const count = await this.repository.count({ where: { roomCode } });
+    return count > 0;
+  }
+
+  async getPlayerCount(gameId: string): Promise<number> {
+    const game = await this.repository.findOne({
+      where: { id: gameId },
+      relations: ['players']
+    });
+    return game?.players?.length || 0;
+  }
+
+  async canJoinGame(gameId: string): Promise<boolean> {
+    const game = await this.findWithPlayers(gameId);
+    if (!game || game.status !== GameStatus.WAITING) {
+      return false;
+    }
+    return game.players.length < game.maxPlayers;
   }
 }
