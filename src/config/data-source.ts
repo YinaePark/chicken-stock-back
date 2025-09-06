@@ -3,7 +3,8 @@ import { DataSource } from 'typeorm';
 import dotenv from 'dotenv';
 import { GameEntity } from '../entities/GameEntity';
 import { PlayerEntity } from '../entities/PlayerEntity';
-
+import { UserEntity } from '../entities/UserEntity'; 
+import { StockTemplateEntity } from '../entities/StockTemplateEntity';
 dotenv.config();
 
 const connectionString = process.env.DATABASE_URL;
@@ -18,11 +19,11 @@ export const AppDataSource = new DataSource(
     ? {
         type: 'postgres',
         url: connectionString,
-        synchronize: false,
-        logging: false,
-        entities: [GameEntity, PlayerEntity],
+        synchronize: true,
+        logging: true,
+        entities: [GameEntity, PlayerEntity, UserEntity, StockTemplateEntity],
         migrations: ['src/migrations/*.{ts,js}'],
-        migrationsRun: true,
+        migrationsRun: false,
       }
     : {
         type: 'postgres',
@@ -31,11 +32,11 @@ export const AppDataSource = new DataSource(
         username,
         password,
         database,
-        synchronize: false,
-        logging: false,
-        entities: [GameEntity, PlayerEntity],
+        synchronize: true,
+        logging: true,
+        entities: [GameEntity, PlayerEntity, UserEntity, StockTemplateEntity],
         migrations: ['src/migrations/*.{ts,js}'],
-        migrationsRun: true,
+        migrationsRun: false,
       }
 );
 
