@@ -12,16 +12,22 @@ export class GameEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Column('varchar', { length: 100 })
+  title!: string;
+
   @Column('enum', { enum: GameStatus, default: GameStatus.WAITING })
   status!: GameStatus;
 
   @Column('int', { name: 'max_players', default: 4 })
   maxPlayers!: number;
 
+  @Column('int', { name: 'current_players', default: 0 })
+  currentPlayers!: number;
+
   @Column('int', { name: 'current_round', default: 0 })
   currentRound!: number;
 
-  @Column('int', { name: 'total_rounds', default: 10 })
+  @Column('int', { name: 'total_rounds', default: 32 })
   totalRounds!: number;
 
   @Column('int', { name: 'game_duration', default: 480 }) // seconds
