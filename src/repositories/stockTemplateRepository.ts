@@ -19,7 +19,9 @@ export class StockTemplateRepository {
   }
 
   async findAll(): Promise<StockTemplateEntity[]> {
-    return await this.repository.find({ order: { sector: 'ASC', name: 'ASC' } });
+    return await this.repository.find({
+      order: { sector: 'ASC', name: 'ASC' }
+    });
   }
 
   async findBySector(sector: Sector): Promise<StockTemplateEntity[]> {
@@ -36,38 +38,8 @@ export class StockTemplateRepository {
     });
   }
 
-  // 게임용 랜덤 5개 선택 (난이도별 균형)
+  // 게임용 5개 종목 선택 (섹터별 균형)
   async selectRandomForGame(): Promise<StockTemplateEntity[]> {
-    const queries = [
-      // 쉬움 2개
-      this.repository.createQueryBuilder('stock')
-        .where('stock.difficulty = :difficulty', { difficulty: Difficulty.EASY })
-        .orderBy('RANDOM()')
-        .limit(2)
-        .getMany(),
-      
-      // 보통 2개  
-      this.repository.createQueryBuilder('stock')
-        .where('stock.difficulty = :difficulty', { difficulty: Difficulty.MEDIUM })
-        .orderBy('RANDOM()')
-        .limit(2)
-        .getMany(),
-      
-      // 어려움 1개
-      this.repository.createQueryBuilder('stock')
-        .where('stock.difficulty = :difficulty', { difficulty: Difficulty.HARD })
-        .orderBy('RANDOM()')
-        .limit(1)
-        .getMany()
-    ];
-
-    const results = await Promise.all(queries);
-    const allResults = results.flat().filter(stock => stock !== undefined);
-    return allResults;
-  }
-
-  // 섹터별 균형 잡힌 선택
-  async selectBalancedForGame(): Promise<StockTemplateEntity[]> {
     const sectors = Object.values(Sector);
     const selectedStocks: StockTemplateEntity[] = [];
 
@@ -78,7 +50,7 @@ export class StockTemplateRepository {
         .orderBy('RANDOM()')
         .limit(1)
         .getMany();
-      
+        
       if (sectorStocks && sectorStocks.length > 0) {
         selectedStocks.push(...sectorStocks);
       }
@@ -89,13 +61,13 @@ export class StockTemplateRepository {
       const selectedCodes = selectedStocks.map(s => s.code);
       const whereCondition = selectedCodes.length > 0 ? 
         'stock.code NOT IN (:...codes)' : '1=1';
-      
+        
       const additionalStocks = await this.repository.createQueryBuilder('stock')
         .where(whereCondition, { codes: selectedCodes })
         .orderBy('RANDOM()')
         .limit(5 - selectedStocks.length)
         .getMany();
-      
+        
       if (additionalStocks) {
         selectedStocks.push(...additionalStocks);
       }
@@ -111,4 +83,17 @@ export class StockTemplateRepository {
   async delete(code: string): Promise<void> {
     await this.repository.delete(code);
   }
+
+  async count(): Promise<number> {
+    return await this.repository.count();
+  }
+
+  async findRandom(limit: number): Promise<StockTemplateEntity[]> {
+    return await this.repository
+      .createQueryBuilder('stock')
+      .orderBy('RANDOM()')
+      .limit(limit)
+      .getMany();
+  }
+
 }
