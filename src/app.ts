@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import { AppDataSource } from './config/data-source';
 import authRoutes from './routes/authRoutes';
+import gameRoutes from './routes/gameRoutes';
 
 const app = express();
 const PORT = 3000;
@@ -56,7 +57,8 @@ const specs = swaggerJSDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // API 라우트 등록
-app.use('/api/auth', authRoutes);   
+app.use('/api/auth', authRoutes); 
+app.use('/api/games', gameRoutes);  
 
 // 헬스체크
 app.get('/api/health', (req, res) => {
@@ -65,15 +67,6 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
     memory: process.memoryUsage(),
     timestamp: new Date().toISOString()
-  });
-});
-
-// 404 처리
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: `경로를 찾을 수 없습니다: ${req.originalUrl}`,
-    timestamp: new Date()
   });
 });
 
@@ -87,16 +80,6 @@ console.log('DB config →', process.env.DATABASE_URL
       database: process.env.PGDATABASE,
     }
 );
-
-// 헬스체크
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    timestamp: new Date().toISOString()
-  });
-});
 
 // 404 처리
 app.use((req, res) => {
