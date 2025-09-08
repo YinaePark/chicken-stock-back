@@ -25,7 +25,7 @@ export class PlayerEntity {
   @Column('bigint', { name: 'profit_loss', default: 0 })
   profitLoss!: number;
 
-  @Column('decimal', { name: 'profit_rate', precision: 5, scale: 2, default: 0 })
+  @Column('decimal', { name: 'profit_rate', precision: 12, scale: 2, default: 0 })
   profitRate!: number;
 
   @Column('int', { nullable: true })

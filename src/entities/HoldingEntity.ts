@@ -18,7 +18,7 @@ export class HoldingEntity {
   @Column('int', { default: 0 })
   quantity!: number;
 
-  @Column('decimal', { name: 'average_price', precision: 10, scale: 2 })
+  @Column('decimal', { name: 'average_price', precision: 12, scale: 2 })
   averagePrice!: number;
 
   @UpdateDateColumn({ name: 'updated_at' })

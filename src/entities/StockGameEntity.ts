@@ -15,13 +15,13 @@ export class StockGameEntity {
   @Column('varchar', { name: 'stock_code' })
   stockCode!: string;
 
-  @Column('decimal', { name: 'initial_price', precision: 10, scale: 2 })
+  @Column('decimal', { name: 'initial_price', precision: 12, scale: 2 })
   initialPrice!: number;
 
-  @Column('decimal', { name: 'current_price', precision: 10, scale: 2 })
+  @Column('decimal', { name: 'current_price', precision: 12, scale: 2 })
   currentPrice!: number;
 
-  @Column('decimal', { name: 'volatility', precision: 5, scale: 2, default: 0.05 })
+  @Column('decimal', { name: 'volatility', precision: 12, scale: 2, default: 0.05 })
   volatility!: number;
 
   @ManyToOne(() => GameEntity, { onDelete: 'CASCADE' })

@@ -25,7 +25,7 @@ export class TradeEntity {
   @Column('int')
   quantity!: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', { precision: 15, scale: 2 })
   price!: number;
 
   @Column('decimal', { name: 'total_amount', precision: 15, scale: 2 })
