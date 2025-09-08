@@ -851,11 +851,8 @@
 
         // 게임 데이터 로드
         async function loadGameData() {
-            console.log('🔄 loadGameData 시작...');
             
-            try {
-                console.log('📡 Promise.all 호출 전...');
-                
+            try {                
                 const [gameResponse, playersResponse, stocksResponse] = await Promise.all([
                     fetch(`${API_BASE}/games/${gameId}`, {
                         headers: { 'Authorization': `Bearer ${currentToken}` }
@@ -868,45 +865,35 @@
                     })
                 ]);
 
-                console.log('📡 Promise.all 완료, JSON 파싱 시작...');
                 
                 const gameDataResponse = await gameResponse.json();
                 const playersData = await playersResponse.json();
                 const stocksDataResponse = await stocksResponse.json();
 
-                console.log('📊 JSON 파싱 완료');
                 
                 if (gameDataResponse.success) {
                     this.gameData = gameDataResponse.data;
                     updateGameHeader(gameDataResponse.data);
-                    console.log('✅ 게임 헤더 업데이트 완료');
                 }
 
                 if (playersData.success) {
                     updatePlayersData(playersData.data);
-                    console.log('✅ 플레이어 데이터 업데이트 완료');
                 }
                 
                 if (stocksDataResponse.success) {
-                    console.log('🎯 주식 데이터 처리 시작');
                     updateStocksData(stocksDataResponse.data);
-                    console.log('🎯 generateStockTabs 호출');
                     generateStockTabs(); 
-                    console.log('✅ 주식 데이터 처리 완료');
                 } else {
-                    console.error('❌ stocksDataResponse.success가 false');
                 }
 
                 // 내 포트폴리오 로드
                 if (currentPlayer) {
                     await loadMyPortfolio();
-                    console.log('✅ 포트폴리오 로드 완료');
                 }
 
                 // 거래 내역 로드
                 if (currentPlayer) {
                     await loadTradeHistory();
-                    console.log('✅ 거래 내역 로드 완료');
                 }
 
             } catch (error) {
@@ -1005,23 +992,18 @@
 
         // 주식 데이터 업데이트
         function updateStocksData(stocks) {
-            console.log('🔍 updateStocksData 호출됨:', stocks);
             
             stocksData = {};
             availableStocks = [];
             
             if (!stocks || !Array.isArray(stocks)) {
-                console.warn('❌ Invalid stocks data received:', stocks);
                 return;
             }
             
-            console.log(`📊 처리할 주식 개수: ${stocks.length}`);
             
             stocks.forEach((stock, index) => {
-                console.log(`📈 주식 ${index + 1}:`, stock);
                 
                 if (!stock || !stock.stockCode) {
-                    console.warn('❌ Invalid stock data:', stock);
                     return;
                 }
                 
@@ -1037,12 +1019,8 @@
                     initialPrice: Number(stock.initialPrice) || 0
                 };
                 
-                console.log(`✅ 처리된 주식 정보:`, stockInfo);
                 availableStocks.push(stockInfo);
             });
-            
-            console.log('📋 최종 availableStocks:', availableStocks);
-            console.log('🗂️ 최종 stocksData:', stocksData);
             
             // 현재 선택된 주식 정보 업데이트
             if (selectedStock) {
@@ -1051,22 +1029,16 @@
         }
 
         function generateStockTabs() {
-            console.log('🏷️ generateStockTabs 호출됨');
-            console.log('📋 availableStocks:', availableStocks);
-            
             const tabsContainer = document.getElementById('stockTabs');
             
             if (availableStocks.length === 0) {
-                console.warn('❌ 주식 데이터가 없음');
                 tabsContainer.innerHTML = '<div class="loading">주식 정보를 찾을 수 없습니다.</div>';
                 return;
             }
             
-            console.log(`✅ ${availableStocks.length}개의 주식 탭 생성 중...`);
             tabsContainer.innerHTML = '';
             
             availableStocks.forEach((stock, index) => {
-                console.log(`🏷️ 탭 ${index + 1} 생성:`, stock);
                 
                 const tab = document.createElement('button');
                 tab.className = `stock-tab ${index === 0 ? 'active' : ''}`;
@@ -1075,7 +1047,6 @@
                 
                 // 클릭 이벤트 추가
                 tab.addEventListener('click', function() {
-                    console.log(`🖱️ 주식 탭 클릭: ${stock.code} (${stock.name})`);
                     
                     // 활성 탭 변경
                     document.querySelectorAll('.stock-tab').forEach(t => t.classList.remove('active'));
@@ -1083,7 +1054,6 @@
                     
                     // 선택된 주식 변경
                     selectedStock = this.dataset.stock;
-                    console.log(`✅ 선택된 주식 변경: ${selectedStock}`);
                     
                     updateSelectedStockDisplay();
                     updateTradeButton();
@@ -1094,13 +1064,11 @@
                 // 첫 번째 주식을 기본 선택
                 if (index === 0) {
                     selectedStock = stock.code;
-                    console.log(`🎯 기본 선택 주식: ${selectedStock}`);
                     updateSelectedStockDisplay();
                     updateTradeButton();
                 }
             });
             
-            console.log('✅ 주식 탭 생성 완료');
         }
 
         // 선택된 주식 표시 업데이트
