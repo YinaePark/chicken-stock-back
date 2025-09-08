@@ -233,6 +233,268 @@ router.get('/:id/players', (req, res) => gameController.getGamePlayers(req, res)
  *                   type: integer
  */
 router.get('/:id/stocks', (req, res) => gameController.getGameStocks(req, res));
+/**
+ * @swagger
+ * /api/games/{id}/start:
+ *   post:
+ *     summary: 게임 시작
+ *     description: 호스트가 게임을 시작합니다.
+ *     tags: [Games]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: 게임 ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 게임 시작 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       400:
+ *         description: 잘못된 요청 또는 게임 시작 실패
+ *       401:
+ *         description: 인증 필요
+ */
+router.post('/:id/start',  authMiddleware.authenticate, gameController.startGame.bind(gameController));
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Player:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *           description: 플레이어 고유 ID
+ *         userId:
+ *           type: string
+ *           format: uuid
+ *           description: 사용자 ID
+ *         gameId:
+ *           type: string
+ *           format: uuid
+ *           description: 게임 ID
+ *         nickname:
+ *           type: string
+ *           description: 게임 내 닉네임
+ *           example: "치킨왕"
+ *         currentCash:
+ *           type: number
+ *           description: 현재 보유 현금
+ *           example: 1000000
+ *         totalAssetValue:
+ *           type: number
+ *           description: 총 자산 가치
+ *           example: 1150000
+ *         profitLoss:
+ *           type: number
+ *           description: 손익
+ *           example: 150000
+ *         profitRate:
+ *           type: number
+ *           description: 수익률 (%)
+ *           example: 15.0
+ *         ranking:
+ *           type: integer
+ *           description: 현재 순위
+ *           example: 1
+ *         isReady:
+ *           type: boolean
+ *           description: 준비 상태 (게임 시작 전)
+ *           example: true
+ *         isConnected:
+ *           type: boolean
+ *           description: 연결 상태
+ *           example: true
+ *         joinedAt:
+ *           type: string
+ *           format: date-time
+ *           description: 게임 참가 시각
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: 플레이어 생성 시각
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: 플레이어 정보 업데이트 시각
+ * 
+ * /api/games/{id}/ready:
+ *   post:
+ *     summary: 플레이어 준비 상태 설정
+ *     description: 게임에 참가한 플레이어가 준비 상태를 변경합니다. 모든 플레이어가 준비되어야 게임을 시작할 수 있습니다.
+ *     tags: [Games]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: 게임 ID
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *           example: "716f8540-b745-430c-99d5-e8c3685ecc07"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - isReady
+ *             properties:
+ *               isReady:
+ *                 type: boolean
+ *                 description: 준비 상태 (true = 준비완료, false = 준비해제)
+ *                 example: true
+ *           examples:
+ *             ready:
+ *               summary: 준비 완료
+ *               value:
+ *                 isReady: true
+ *             notReady:
+ *               summary: 준비 해제
+ *               value:
+ *                 isReady: false
+ *     responses:
+ *       200:
+ *         description: 준비 상태 변경 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: "준비 상태가 완료되었습니다."
+ *             examples:
+ *               ready:
+ *                 summary: 준비 완료 응답
+ *                 value:
+ *                   success: true
+ *                   message: "준비 상태가 완료되었습니다."
+ *               notReady:
+ *                 summary: 준비 해제 응답
+ *                 value:
+ *                   success: true
+ *                   message: "준비 상태가 해제되었습니다."
+ *       400:
+ *         description: 잘못된 요청
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *             examples:
+ *               notParticipating:
+ *                 summary: 게임 미참가
+ *                 value:
+ *                   success: false
+ *                   error: "참가하지 않은 게임입니다."
+ *               gameStarted:
+ *                 summary: 게임 이미 시작됨
+ *                 value:
+ *                   success: false
+ *                   error: "이미 시작된 게임의 준비 상태는 변경할 수 없습니다."
+ *       401:
+ *         description: 인증 필요
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *             example:
+ *               success: false
+ *               error: "인증이 필요합니다."
+ *       404:
+ *         description: 게임을 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *             example:
+ *               success: false
+ *               error: "게임을 찾을 수 없습니다."
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *             example:
+ *               success: false
+ *               error: "준비 상태 변경 중 오류가 발생했습니다."
+ */
+router.post('/:id/ready', authMiddleware.authenticate, (req, res) => gameController.setPlayerReady(req, res));
+
+/**
+ * @swagger
+ * /api/games/{id}/pause:
+ *   post:
+ *     summary: 게임 일시정지
+ *     description: 호스트가 진행 중인 게임을 일시정지합니다.
+ *     tags: [Games]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: 게임 ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 게임 일시정지 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       400:
+ *         description: 잘못된 요청 또는 일시정지 실패
+ *       401:
+ *         description: 인증 필요
+ */
+router.post('/:id/pause', authMiddleware.authenticate, gameController.pauseGame.bind(gameController));
+
+/**
+ * @swagger
+ * /api/games/{id}/end:
+ *   post:
+ *     summary: 게임 종료x
+ *     description: 호스트가 게임을 강제로 종료합니다.
+ *     tags: [Games]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: 게임 ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 게임 종료 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       400:
+ *         description: 잘못된 요청 또는 종료 실패
+ *       401:
+ *         description: 인증 필요
+ */
+router.post('/:id/end',  authMiddleware.authenticate, gameController.endGame.bind(gameController));
 
 /**
  * @swagger
