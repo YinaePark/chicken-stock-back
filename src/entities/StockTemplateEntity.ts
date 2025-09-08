@@ -64,7 +64,7 @@ export class StockTemplateEntity {
   @Column('jsonb', { name: 'bear_events' })
   bearEvents!: NewsEvent[]; // 악재 뉴스들
 
-  @Column('decimal', { name: 'base_price', precision: 10, scale: 2, default: 50000 })
+  @Column('decimal', { name: 'base_price', precision: 12, scale: 2, default: 50000 })
   basePrice!: number; // 기준 가격
 
   @CreateDateColumn({ name: 'created_at' })
