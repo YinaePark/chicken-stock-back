@@ -24,7 +24,8 @@ export const AppDataSource = new DataSource(
         type: 'postgres',
         url: connectionString,
         synchronize: process.env.NODE_ENV !== 'production', // 운영에서는 false
-        logging: process.env.NODE_ENV === 'development',
+        logging: false,
+        // process.env.NODE_ENV === 'development',
         entities: [
           GameEntity,
           PlayerEntity,
@@ -52,7 +53,8 @@ export const AppDataSource = new DataSource(
         password,
         database,
         synchronize: process.env.NODE_ENV !== 'production',
-        logging: process.env.NODE_ENV === 'development',
+        logging: false,
+        // process.env.NODE_ENV === 'development',
         entities: [
           GameEntity,
           PlayerEntity,
