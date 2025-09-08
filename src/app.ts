@@ -4,12 +4,18 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import 'reflect-metadata';
 import dotenv from 'dotenv';
+import path from 'path';
 dotenv.config();
 import { AppDataSource } from './config/data-source';
 import authRoutes from './routes/authRoutes';
+import gameRoutes from './routes/gameRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 const app = express();
 const PORT = 3000;
+
+// 정적 파일 서빙 (public 폴더)
+app.use(express.static(path.join(__dirname, '/public')));
 
 // 미들웨어 설정
 app.use(express.json());
@@ -56,7 +62,10 @@ const specs = swaggerJSDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // API 라우트 등록
-app.use('/api/auth', authRoutes);   
+app.use('/api/auth', authRoutes); 
+app.use('/api/games', gameRoutes);  
+app.use('/api/admin', adminRoutes);  
+
 
 // 헬스체크
 app.get('/api/health', (req, res) => {
@@ -65,15 +74,6 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
     memory: process.memoryUsage(),
     timestamp: new Date().toISOString()
-  });
-});
-
-// 404 처리
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: `경로를 찾을 수 없습니다: ${req.originalUrl}`,
-    timestamp: new Date()
   });
 });
 
@@ -87,16 +87,6 @@ console.log('DB config →', process.env.DATABASE_URL
       database: process.env.PGDATABASE,
     }
 );
-
-// 헬스체크
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    timestamp: new Date().toISOString()
-  });
-});
 
 // 404 처리
 app.use((req, res) => {

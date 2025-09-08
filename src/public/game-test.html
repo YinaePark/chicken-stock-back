@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>치킨스톡게임 API 테스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .user-status {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .status-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .status-item strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .logged-in {
+            color: #51cf66;
+        }
+        
+        .logged-out {
+            color: #ff6b6b;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: #e9ecef;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .tab.active {
+            background: white;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .tab:hover {
+            background: #dee2e6;
+        }
+        
+        .tab.active:hover {
+            background: white;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .form-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #51cf66, #40c057);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(45deg, #ffd93d, #ff9500);
+        }
+        
+        .game-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .game-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .game-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .game-card.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .game-detail {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .info-item strong {
+            display: block;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status.waiting {
+            background: #ffeaa7;
+            color: #d63031;
+        }
+        
+        .status.playing {
+            background: #00b894;
+            color: white;
+        }
+        
+        .stocks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stock-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            transition: box-shadow 0.3s;
+        }
+        
+        .stock-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .price-change {
+            font-weight: bold;
+        }
+        
+        .price-change.positive {
+            color: #00b894;
+        }
+        
+        .price-change.negative {
+            color: #e17055;
+        }
+        
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .player-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .player-card.current-user {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .trade-section {
+            background: #e8f5e8;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .trade-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+        
+        .response {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            border-left: 4px solid #667eea;
+        }
+        
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            background: #51cf66;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .warning {
+            background: #ffd93d;
+            color: #333;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+        
+        .token-display {
+            font-family: monospace;
+            font-size: 11px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐔 치킨스톡게임 API 테스트</h1>
+            <p>실시간 주식 거래 시뮬레이션 게임</p>
+            
+            <div class="user-status">
+                <div class="status-item">
+                    <strong>로그인 상태</strong>
+                    <span id="loginStatus" class="logged-out">로그아웃</span>
+                </div>
+                <div class="status-item">
+                    <strong>사용자 이메일</strong>
+                    <span id="userEmail">-</span>
+                </div>
+                <div class="status-item">
+                    <strong>현재 플레이어 ID</strong>
+                    <span id="currentPlayerId">-</span>
+                </div>
+                <div class="status-item">
+                    <strong>선택된 게임</strong>
+                    <span id="selectedGameId">-</span>
+                </div>
+                <div class="status-item">
+                    <strong>JWT 토큰</strong>
+                    <div class="token-display" id="tokenDisplay">-</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('auth')">로그인 & 게임 생성</button>
+            <button class="tab" onclick="showTab('game')">내 게임 관리</button>
+        </div>
+        
+        <!-- 첫번째 탭: 로그인 & 게임 생성 -->
+        <div id="auth-tab" class="tab-content active">
+            <div class="form-section">
+                <h3>🔐 인증</h3>
+                
+                <!-- 수동 토큰 입력 -->
+                <div class="form-group">
+                    <label>수동 JWT 토큰 입력</label>
+                    <input type="text" id="manualToken" placeholder="JWT 토큰을 직접 입력하세요">
+                    <button class="btn btn-warning" onclick="setManualToken()">토큰 설정</button>
+                </div>
+                
+                <!-- 회원가입 -->
+                <div class="form-group">
+                    <label>회원가입</label>
+                    <input type="email" id="registerEmail" placeholder="이메일">
+                    <input type="password" id="registerPassword" placeholder="비밀번호">
+                    <input type="text" id="registerNickname" placeholder="닉네임">
+                    <button class="btn" onclick="register()">회원가입</button>
+                </div>
+                
+                <!-- 로그인 -->
+                <div class="form-group">
+                    <label>로그인</label>
+                    <input type="email" id="loginEmail" placeholder="이메일">
+                    <input type="password" id="loginPassword" placeholder="비밀번호">
+                    <button class="btn" onclick="login()">로그인</button>
+                    <button class="btn btn-danger" onclick="logout()">로그아웃</button>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>🎮 게임 관리</h3>
+                
+                <!-- 게임 생성 -->
+                <div class="form-group">
+                    <label>게임 생성</label>
+                    <input type="text" id="gameTitle" placeholder="게임 제목">
+                    <button class="btn" onclick="createGame()" id="createGameBtn">게임 생성</button>
+                </div>
+                
+                <!-- 게임 참가 -->
+                <div class="form-group">
+                    <label>게임 참가</label>
+                    <input type="text" id="joinGameId" placeholder="게임 ID">
+                    <input type="text" id="joinNickname" placeholder="게임 닉네임">
+                    <button class="btn" onclick="joinGame()" id="joinGameBtn">게임 참가</button>
+                </div>
+                
+                <button class="btn btn-success" onclick="loadAllGames()">모든 게임 목록 보기</button>
+            </div>
+            
+            <!-- API 응답 -->
+            <div class="form-section">
+                <h3>📄 API 응답</h3>
+                <div id="apiResponse" class="response">API 테스트 결과가 여기에 표시됩니다.</div>
+            </div>
+        </div>
+        
+        <!-- 두번째 탭: 내 게임 관리 -->
+        <div id="game-tab" class="tab-content">
+            <div class="form-section">
+                <h3>🎯 내가 참가한 게임 목록</h3>
+                <button class="btn btn-success" onclick="loadMyGames()">내 게임 목록 새로고침</button>
+                <div id="myGamesList" class="game-list">
+                    <div class="loading">로그인 후 게임 목록을 불러오세요.</div>
+                </div>
+            </div>
+            
+            <!-- 선택된 게임 상세 정보 -->
+            <div id="gameDetailSection">
+                <div class="form-section">
+                    <h3>🎮 게임 상세 정보</h3>
+                    <div id="gameDetail" class="game-detail"></div>
+                    <!-- 호스트 전용 컨트롤 -->
+                    <div id="hostControls" class="hidden" style="margin-top: 20px;">
+                        <h4>🎯 호스트 전용 컨트롤</h4>
+                        <div style="background: #e8f5e8; padding: 15px; border-radius: 8px;">
+                            <button class="btn btn-success" onclick="startGame()" id="startGameBtn">게임 시작</button>
+                            <button class="btn btn-warning" onclick="pauseGame()" id="pauseGameBtn">게임 일시정지</button>
+                            <button class="btn btn-danger" onclick="endGame()" id="endGameBtn">게임 종료</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>📊 내 플레이어 정보</h3>
+                    <div id="myPlayerInfo" class="info-grid"></div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>📈 주식 종목 목록</h3>
+                    <div id="stocksList" class="stocks-grid"></div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>👥 다른 플레이어들</h3>
+                    <div id="otherPlayersList" class="players-grid"></div>
+                </div>
+                
+                <!-- 주식 거래 -->
+                <div class="form-section trade-section">
+                    <h3>💰 주식 거래</h3>
+                    <div class="trade-form">
+                        <div class="form-group">
+                            <label>종목 코드</label>
+                            <input type="text" id="tradeStockCode" placeholder="종목 코드">
+                        </div>
+                        <div class="form-group">
+                            <label>거래 유형</label>
+                            <select id="tradeType">
+                                <option value="BUY">매수</option>
+                                <option value="SELL">매도</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>수량</label>
+                            <input type="number" id="tradeQuantity" placeholder="수량" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button class="btn" onclick="executeTrade()" id="executeTradeBtn">거래 실행</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        let currentToken = localStorage.getItem('token');
+        let currentUser = null;
+        let selectedGame = null;
+        let currentPlayer = null;
+
+        // 초기화
+        window.onload = function() {
+            updateUserStatus();
+            if (currentToken) {
+                verify();
+            }
+        };
+
+        // 탭 전환
+        function showTab(tabName) {
+            // 모든 탭과 탭 컨텐츠 비활성화
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // 선택된 탭과 컨텐츠 활성화
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // 게임 탭으로 전환시 내 게임 목록 자동 로드
+            if (tabName === 'game' && currentToken) {
+                loadMyGames();
+            }
+        }
+
+        // 사용자 상태 업데이트
+        function updateUserStatus() {
+            document.getElementById('loginStatus').textContent = currentToken && currentUser ? '로그인됨' : '로그아웃';
+            document.getElementById('loginStatus').className = currentToken && currentUser ? 'logged-in' : 'logged-out';
+            document.getElementById('userEmail').textContent = currentUser ? currentUser.email : '-';
+            document.getElementById('currentPlayerId').textContent = currentPlayer ? currentPlayer.id : '-';
+            document.getElementById('selectedGameId').textContent = selectedGame ? selectedGame.id : '-';
+            document.getElementById('tokenDisplay').textContent = currentToken ? currentToken.substring(0, 30) + '...' : '-';
+            
+            // 인증이 필요한 버튼들 상태 업데이트
+            const authButtons = ['createGameBtn', 'joinGameBtn', 'executeTradeBtn'];
+            authButtons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.disabled = !currentToken;
+                }
+            });
+        }
+
+        // 인증이 필요한 작업 전 체크
+        function checkAuth() {
+            if (!currentToken) {
+                showError('로그인이 필요합니다.');
+                return false;
+            }
+            return true;
+        }
+
+        // 수동 토큰 설정
+        function setManualToken() {
+            const token = document.getElementById('manualToken').value.trim();
+            if (!token) {
+                showError('토큰을 입력해주세요.');
+                return;
+            }
+            
+            currentToken = token;
+            localStorage.setItem('token', token);
+            document.getElementById('manualToken').value = '';
+            verify();
+        }
+
+        // 인증 함수들
+        async function register() {
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const nickname = document.getElementById('registerNickname').value;
+            
+            if (!email || !password || !nickname) {
+                showError('모든 필드를 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, nickname })
+                });
+
+                const data = await response.json();
+                showResponse('회원가입', data);
+                
+                if (data.success && data.data) {
+                    currentToken = data.data.token;
+                    currentUser = data.data.user;
+                    localStorage.setItem('token', currentToken);
+                    updateUserStatus();
+                    showSuccess('회원가입 및 자동 로그인 성공!');
+                    
+                    // 입력 필드 초기화
+                    document.getElementById('registerEmail').value = '';
+                    document.getElementById('registerPassword').value = '';
+                    document.getElementById('registerNickname').value = '';
+                }
+            } catch (error) {
+                showError('회원가입 요청 실패: ' + error.message);
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                showError('이메일과 비밀번호를 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                showResponse('로그인', data);
+                
+                if (data.success && data.data) {
+                    currentToken = data.data.token;
+                    currentUser = data.data.user;
+                    localStorage.setItem('token', currentToken);
+                    updateUserStatus();
+                    showSuccess('로그인 성공!');
+                    
+                    // 입력 필드 초기화
+                    document.getElementById('loginEmail').value = '';
+                    document.getElementById('loginPassword').value = '';
+                }
+            } catch (error) {
+                showError('로그인 요청 실패: ' + error.message);
+            }
+        }
+
+        async function verify() {
+            if (!currentToken) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: currentToken })
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    currentUser = data.data.user;
+                    updateUserStatus();
+                    showSuccess('토큰 인증 성공!');
+                } else {
+                    showError('토큰이 유효하지 않습니다.');
+                    logout();
+                }
+            } catch (error) {
+                showError('토큰 검증 실패: ' + error.message);
+                logout();
+            }
+        }
+
+        function logout() {
+            currentToken = null;
+            currentUser = null;
+            selectedGame = null;
+            currentPlayer = null;
+            localStorage.removeItem('token');
+            updateUserStatus();
+            
+            // 게임 관련 UI 초기화
+            document.getElementById('gameDetailSection').classList.add('hidden');
+            document.getElementById('myGamesList').innerHTML = '<div class="loading">로그인 후 게임 목록을 불러오세요.</div>';
+            
+            showSuccess('로그아웃 되었습니다.');
+        }
+
+        // 게임 관리 함수들
+        async function createGame() {
+            if (!checkAuth()) return;
+            
+            const title = document.getElementById('gameTitle').value;
+            if (!title) {
+                showError('게임 제목을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/games`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ title })
+                });
+
+                const data = await response.json();
+                showResponse('게임 생성', data);
+                
+                if (data.success) {
+                    showSuccess('게임이 생성되었습니다!');
+                    document.getElementById('gameTitle').value = '';
+                }
+            } catch (error) {
+                showError('게임 생성 요청 실패: ' + error.message);
+            }
+        }
+
+        async function joinGame() {
+            if (!checkAuth()) return;
+            
+            const gameId = document.getElementById('joinGameId').value;
+            const nickname = document.getElementById('joinNickname').value;
+            
+            if (!gameId || !nickname) {
+                showError('게임 ID와 닉네임을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/games/${gameId}/join`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ nickname })
+                });
+
+                const data = await response.json();
+                showResponse('게임 참가', data);
+                
+                if (data.success) {
+                    showSuccess('게임에 참가했습니다!');
+                    document.getElementById('joinGameId').value = '';
+                    document.getElementById('joinNickname').value = '';
+                }
+            } catch (error) {
+                showError('게임 참가 요청 실패: ' + error.message);
+            }
+        }
+
+        async function loadAllGames() {
+            try {
+                const response = await fetch(`${API_BASE}/games`);
+                const data = await response.json();
+                showResponse('전체 게임 목록 조회', data);
+            } catch (error) {
+                showError('게임 목록 요청 실패: ' + error.message);
+            }
+        }
+
+        // 내 게임 목록 로드
+        async function loadMyGames() {
+            if (!checkAuth()) return;
+
+            try {
+                // 사용자가 참가한 게임 목록을 가져오는 API 호출
+                // 실제 API 엔드포인트에 맞게 수정 필요
+                const response = await fetch(`${API_BASE}/users/games`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    displayMyGames(data.data);
+                } else {
+                    // 대안: 전체 게임 목록에서 내가 참가한 게임 필터링
+                    await loadGamesAlternative();
+                }
+            } catch (error) {
+                showError('내 게임 목록 요청 실패: ' + error.message);
+                // 대안 방법 시도
+                await loadGamesAlternative();
+            }
+        }
+
+        // 대안 방법: 전체 게임에서 필터링
+        async function loadGamesAlternative() {
+            try {
+                const response = await fetch(`${API_BASE}/games`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 임시로 모든 게임을 표시 (실제로는 내가 참가한 게임만 필터링해야 함)
+                    displayMyGames(data.data);
+                }
+            } catch (error) {
+                showError('게임 목록 요청 실패: ' + error.message);
+            }
+        }
+
+        function displayMyGames(games) {
+            const container = document.getElementById('myGamesList');
+            container.innerHTML = '';
+            
+            if (!games || games.length === 0) {
+                container.innerHTML = '<div class="loading">참가한 게임이 없습니다.</div>';
+                return;
+            }
+
+            games.forEach(game => {
+                const gameCard = document.createElement('div');
+                gameCard.className = 'game-card';
+                gameCard.onclick = () => selectGame(game);
+                
+                gameCard.innerHTML = `
+                    <h4>${game.title}</h4>
+                    <p><strong>게임 ID:</strong> ${game.id}</p>
+                    <p><strong>상태:</strong> <span class="status ${game.status.toLowerCase()}">${game.status}</span></p>
+                    <p><strong>참가자:</strong> ${game.currentPlayers || 0}/${game.maxPlayers || 'N/A'}명</p>
+                    <p><strong>라운드:</strong> ${game.currentRound || 0}/${game.totalRounds || 'N/A'}</p>
+                `;
+                
+                container.appendChild(gameCard);
+            });
+        }
+
+        // 게임 선택
+        async function selectGame(game) {
+            selectedGame = game;
+            updateUserStatus();
+            
+            // 선택된 게임 카드 하이라이트
+            document.querySelectorAll('.game-card').forEach(card => card.classList.remove('selected'));
+            event.target.classList.add('selected');
+            
+            // 게임 상세 정보 로드
+            await loadGameDetails(game.id);
+            
+            document.getElementById('gameDetailSection').classList.remove('hidden');
+        }
+
+        // 게임 상세 정보 로드
+        async function loadGameDetails(gameId) {
+            try {
+                // 게임 정보
+                const gameResponse = await fetch(`${API_BASE}/games/${gameId}`);
+                const gameData = await gameResponse.json();
+                
+                // 참가자 목록
+                const playersResponse = await fetch(`${API_BASE}/games/${gameId}/players`);
+                const playersData = await playersResponse.json();
+                
+                // 종목 목록
+                const stocksResponse = await fetch(`${API_BASE}/games/${gameId}/stocks`);
+                const stocksData = await stocksResponse.json();
+                
+                if (gameData.success) {
+                    displayGameDetails(gameData.data);
+                    
+                    if (playersData.success) {
+                        displayPlayers(playersData.data);
+                    }
+                    
+                    if (stocksData.success) {
+                        displayStocks(stocksData.data);
+                    }
+                }
+                
+            } catch (error) {
+                showError('게임 상세 정보 로드 실패: ' + error.message);
+            }
+        }
+
+        // 게임 상세 정보 표시
+        function displayGameDetails(game) {
+            const container = document.getElementById('gameDetail');
+            container.innerHTML = `
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>게임 제목</strong>
+                        ${game.title}
+                    </div>
+                    <div class="info-item">
+                        <strong>게임 ID</strong>
+                        ${game.id}
+                    </div>
+                    <div class="info-item">
+                        <strong>상태</strong>
+                        <span class="status ${game.status.toLowerCase()}">${game.status}</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>참가자</strong>
+                        ${game.currentPlayers || 0}/${game.maxPlayers || 'N/A'}명
+                    </div>
+                    <div class="info-item">
+                        <strong>현재 라운드</strong>
+                        ${game.currentRound || 0}/${game.totalRounds || 'N/A'}
+                    </div>
+                    <div class="info-item">
+                        <strong>게임 시간</strong>
+                        ${game.gameDuration || 'N/A'}초
+                    </div>
+                    <div class="info-item">
+                        <strong>호스트</strong>
+                        ${game.hostUserId ? (game.hostUserId === (currentUser ? currentUser.id : null) ? '나' : game.hostUserId) : 'N/A'}
+                    </div>
+                </div>
+            `;
+            
+            // 호스트 권한 확인 및 컨트롤 표시
+            checkHostPermissions(game);
+        }
+
+        // 호스트 권한 확인
+        function checkHostPermissions(game) {
+    console.log('checkHostPermissions 함수 실행됨');
+    console.log('게임 상태:', game.status);
+    
+    const hostControls = document.getElementById('hostControls');
+    const startBtn = document.getElementById('startGameBtn');
+    const pauseBtn = document.getElementById('pauseGameBtn');
+    const endBtn = document.getElementById('endGameBtn');
+    
+    console.log('버튼 요소들:', { startBtn, pauseBtn, endBtn });
+    
+    const isHost = game.hostUserId === (currentUser ? currentUser.id : null);
+    
+    if (isHost) {
+        hostControls.classList.remove('hidden');
+        console.log('호스트 권한 확인됨, 게임 상태 체크 시작');
+        
+        const gameStatus = game.status.toUpperCase();
+        // 게임 상태에 따라 버튼 표시/숨김
+        if (gameStatus === 'WAITING') {
+            console.log('WAITING 상태 처리');
+            startBtn.style.display = 'inline-block';
+            pauseBtn.style.display = 'none';
+            endBtn.style.display = 'none';
+        } else if (game.status === 'PLAYING') {
+            console.log('PLAYING 상태 처리');
+            startBtn.style.display = 'none';
+            pauseBtn.style.display = 'inline-block';
+            endBtn.style.display = 'inline-block';
+        } else if (game.status === 'PAUSED') {
+            console.log('PAUSED 상태 처리');
+            startBtn.style.display = 'inline-block';
+            startBtn.textContent = '게임 재개';
+            pauseBtn.style.display = 'none';
+            endBtn.style.display = 'inline-block';
+        } else {
+            console.log('기타 상태(' + game.status + ') 처리 - 모든 버튼 숨김');
+            startBtn.style.display = 'none';
+            pauseBtn.style.display = 'none';
+            endBtn.style.display = 'none';
+        }
+        
+        console.log('최종 버튼 display 상태:');
+        console.log('startBtn:', startBtn.style.display);
+        console.log('pauseBtn:', pauseBtn.style.display);
+        console.log('endBtn:', endBtn.style.display);
+    } else {
+        hostControls.classList.add('hidden');
+    }
+}
+
+        // 게임 시작
+        async function startGame() {
+            if (!checkAuth() || !selectedGame) {
+                showError('게임을 선택해주세요.');
+                return;
+            }
+
+            try {
+
+                if (currentPlayer && !currentPlayer.isReady) {
+                    const readyResponse = await fetch(`${API_BASE}/games/${selectedGame.id}/ready`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${currentToken}`
+                        },
+                        body: JSON.stringify({ isReady: true })
+                    });
+
+                    if (!readyResponse.ok) {
+                        const readyData = await readyResponse.json();
+                        showError('호스트 준비 상태 설정 실패: ' + (readyData.error || '알 수 없는 오류'));
+                        return;
+                    }
+                }
+
+                const response = await fetch(`${API_BASE}/games/${selectedGame.id}/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const data = await response.json();
+                showResponse('게임 시작', data);
+                
+                if (data.success) {
+                    showSuccess('게임이 시작되었습니다! 게임 화면으로 이동합니다.');
+                    setTimeout(() => {
+                        window.open(`game-play.html?gameId=${selectedGame.id}`, '_blank');
+                    }, 2000);
+                    await loadGameDetails(selectedGame.id);
+                } else {
+                    showError('게임 시작 실패: ' + (data.error || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                showError('게임 시작 요청 실패: ' + error.message);
+            }
+        }
+
+        // 게임 일시정지
+        async function pauseGame() {
+            if (!checkAuth() || !selectedGame) {
+                showError('게임을 선택해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/games/${selectedGame.id}/pause`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const data = await response.json();
+                showResponse('게임 일시정지', data);
+                
+                if (data.success) {
+                    showSuccess('게임이 일시정지되었습니다.');
+                    await loadGameDetails(selectedGame.id);
+                } else {
+                    showError('게임 일시정지 실패: ' + (data.error || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                showError('게임 일시정지 요청 실패: ' + error.message);
+            }
+        }
+
+        // 게임 종료
+        async function endGame() {
+            if (!checkAuth() || !selectedGame) {
+                showError('게임을 선택해주세요.');
+                return;
+            }
+
+            if (!confirm('정말로 게임을 종료하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/games/${selectedGame.id}/end`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const data = await response.json();
+                showResponse('게임 종료', data);
+                
+                if (data.success) {
+                    showSuccess('게임이 종료되었습니다.');
+                    await loadGameDetails(selectedGame.id);
+                } else {
+                    showError('게임 종료 실패: ' + (data.error || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                showError('게임 종료 요청 실패: ' + error.message);
+            }
+        }
+
+        // 플레이어 정보 표시
+        function displayPlayers(players) {
+            if (!players || players.length === 0) {
+                document.getElementById('myPlayerInfo').innerHTML = '<div class="loading">플레이어 정보를 불러올 수 없습니다.</div>';
+                document.getElementById('otherPlayersList').innerHTML = '<div class="loading">다른 플레이어가 없습니다.</div>';
+                return;
+            }
+
+            // 현재 사용자의 플레이어 찾기
+            const myPlayer = players.find(p => p.userId === (currentUser ? currentUser.id : null));
+            currentPlayer = myPlayer;
+            updateUserStatus();
+
+            // 내 플레이어 정보 표시
+            if (myPlayer) {
+                const myPlayerContainer = document.getElementById('myPlayerInfo');
+                myPlayerContainer.innerHTML = `
+                    <div class="info-item">
+                        <strong>닉네임</strong>
+                        ${myPlayer.nickname}
+                    </div>
+                    <div class="info-item">
+                        <strong>플레이어 ID</strong>
+                        ${myPlayer.id}
+                    </div>
+                    <div class="info-item">
+                        <strong>현재 현금</strong>
+                        ${(myPlayer.currentCash || 0).toLocaleString()}원
+                    </div>
+                    <div class="info-item">
+                        <strong>총 자산 가치</strong>
+                        ${(myPlayer.totalAssetValue || 0).toLocaleString()}원
+                    </div>
+                    <div class="info-item">
+                        <strong>손익</strong>
+                        <span class="price-change ${(myPlayer.profitLoss || 0) >= 0 ? 'positive' : 'negative'}">
+                            ${(myPlayer.profitLoss || 0).toLocaleString()}원
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <strong>수익률</strong>
+                        <span class="price-change ${(myPlayer.profitRate || 0) >= 0 ? 'positive' : 'negative'}">
+                            ${(myPlayer.profitRate || 0).toFixed(2)}%
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <strong>현재 순위</strong>
+                        ${myPlayer.ranking || '-'}위
+                    </div>
+                `;
+            } else {
+                document.getElementById('myPlayerInfo').innerHTML = '<div class="loading">내 플레이어 정보를 찾을 수 없습니다.</div>';
+            }
+
+            // 다른 플레이어들 표시
+            const otherPlayers = players.filter(p => p.id !== (myPlayer ? myPlayer.id : null));
+            const otherPlayersContainer = document.getElementById('otherPlayersList');
+            
+            if (otherPlayers.length === 0) {
+                otherPlayersContainer.innerHTML = '<div class="loading">다른 플레이어가 없습니다.</div>';
+                return;
+            }
+
+            otherPlayersContainer.innerHTML = '';
+            otherPlayers.forEach(player => {
+                const playerCard = document.createElement('div');
+                playerCard.className = 'player-card';
+                playerCard.innerHTML = `
+                    <h4>${player.nickname}</h4>
+                    <p><strong>플레이어 ID:</strong> ${player.id}</p>
+                    <p><strong>현재 현금:</strong> ${(player.currentCash || 0).toLocaleString()}원</p>
+                    <p><strong>총 자산:</strong> ${(player.totalAssetValue || 0).toLocaleString()}원</p>
+                    <p><strong>수익률:</strong> 
+                        <span class="price-change ${(player.profitRate || 0) >= 0 ? 'positive' : 'negative'}">
+                            ${(player.profitRate || 0).toFixed(2)}%
+                        </span>
+                    </p>
+                    <p><strong>순위:</strong> ${player.ranking || '-'}위</p>
+                `;
+                otherPlayersContainer.appendChild(playerCard);
+            });
+        }
+
+        // 주식 종목 표시
+        function displayStocks(stocks) {
+            const container = document.getElementById('stocksList');
+            
+            if (!stocks || stocks.length === 0) {
+                container.innerHTML = '<div class="loading">종목 정보가 없습니다.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            stocks.forEach(stock => {
+                const currentPrice = Number(stock.currentPrice) || 0;
+                const initialPrice = Number(stock.initialPrice) || 1;
+                const changePercent = ((currentPrice - initialPrice) / initialPrice * 100).toFixed(2);
+                
+                const stockCard = document.createElement('div');
+                stockCard.className = 'stock-card';
+                stockCard.innerHTML = `
+                    <h4>${stock.stockTemplate?.name || stock.stockCode}</h4>
+                    <p><strong>종목 코드:</strong> ${stock.stockCode}</p>
+                    <p><strong>ID:</strong> ${stock.id}</p>
+                    <p><strong>섹터:</strong> ${stock.stockTemplate?.sector || 'N/A'}</p>
+                    <p><strong>현재가:</strong> ${currentPrice.toLocaleString()}원</p>
+                    <p><strong>초기가:</strong> ${initialPrice.toLocaleString()}원</p>
+                    <p><strong>변동률:</strong> 
+                        <span class="price-change ${changePercent >= 0 ? 'positive' : 'negative'}">
+                            ${changePercent}%
+                        </span>
+                    </p>
+                    <p><strong>변동성:</strong> ${((stock.volatility || 0) * 100).toFixed(1)}%</p>
+                    <button class="btn btn-success" onclick="setTradeStock('${stock.stockCode}')">거래하기</button>
+                `;
+                container.appendChild(stockCard);
+            });
+        }
+
+        // 거래할 종목 설정
+        function setTradeStock(stockCode) {
+            document.getElementById('tradeStockCode').value = stockCode;
+            document.getElementById('tradeStockCode').focus();
+        }
+
+        // 주식 거래 실행
+        async function executeTrade() {
+            if (!checkAuth() || !selectedGame || !currentPlayer) {
+                showError('로그인하고 게임을 선택해주세요.');
+                return;
+            }
+            
+            const stockCode = document.getElementById('tradeStockCode').value;
+            const type = document.getElementById('tradeType').value;
+            const quantity = parseInt(document.getElementById('tradeQuantity').value);
+            
+            if (!stockCode || !quantity) {
+                showError('종목 코드와 수량을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/games/${selectedGame.id}/trades`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ 
+                        playerId: currentPlayer.id, 
+                        stockCode, 
+                        type, 
+                        quantity 
+                    })
+                });
+
+                const data = await response.json();
+                showResponse('거래 실행', data);
+                
+                if (data.success) {
+                    showSuccess(`${type === 'BUY' ? '매수' : '매도'} 거래가 체결되었습니다!`);
+                    // 폼 초기화
+                    document.getElementById('tradeStockCode').value = '';
+                    document.getElementById('tradeQuantity').value = '';
+                    
+                    // 게임 상세 정보 새로고침
+                    await loadGameDetails(selectedGame.id);
+                } else {
+                    showError('거래 실패: ' + (data.error || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                showError('거래 요청 실패: ' + error.message);
+            }
+        }
+
+        // 유틸리티 함수들
+        function showResponse(action, data) {
+            const responseDiv = document.getElementById('apiResponse');
+            responseDiv.textContent = `[${new Date().toLocaleTimeString()}] ${action}:\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        function showError(message) {
+            const existingError = document.querySelector('.error');
+            if (existingError) existingError.remove();
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            
+            // 현재 활성 탭에 메시지 표시
+            const activeTab = document.querySelector('.tab-content.active');
+            activeTab.insertBefore(errorDiv, activeTab.firstChild);
+            
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function showSuccess(message) {
+            const existingSuccess = document.querySelector('.success');
+            if (existingSuccess) existingSuccess.remove();
+            
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.textContent = message;
+            
+            // 현재 활성 탭에 메시지 표시
+            const activeTab = document.querySelector('.tab-content.active');
+            activeTab.insertBefore(successDiv, activeTab.firstChild);
+            
+            setTimeout(() => successDiv.remove(), 3000);
+        }
+
+        function showWarning(message) {
+            const existingWarning = document.querySelector('.warning');
+            if (existingWarning) existingWarning.remove();
+            
+            const warningDiv = document.createElement('div');
+            warningDiv.className = 'warning';
+            warningDiv.textContent = message;
+            
+            // 현재 활성 탭에 메시지 표시
+            const activeTab = document.querySelector('.tab-content.active');
+            activeTab.insertBefore(warningDiv, activeTab.firstChild);
+            
+            setTimeout(() => warningDiv.remove(), 4000);
+        }
+
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey) {
+                switch(e.key) {
+                    case '1':
+                        e.preventDefault();
+                        showTab('auth');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        showTab('game');
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        if (selectedGame) {
+                            loadGameDetails(selectedGame.id);
+                        }
+                        break;
+                    case 'm':
+                        e.preventDefault();
+                        if (currentToken) {
+                            loadMyGames();
+                        }
+                        break;
+                }
+            }
+        });
+
+        // 자동 새로고침 (선택적)
+        function startAutoRefresh() {
+            setInterval(() => {
+                if (selectedGame && currentToken && document.getElementById('game-tab').classList.contains('active')) {
+                    loadGameDetails(selectedGame.id);
+                }
+            }, 15000); // 15초마다 자동 새로고침
+        }
+
+        // 필요시 자동 새로고침 시작
+        // startAutoRefresh();
+    </script>
+</body>
+</html>

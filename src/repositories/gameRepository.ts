@@ -9,29 +9,22 @@ export class GameRepository {
     this.repository = AppDataSource.getRepository(GameEntity);
   }
 
-  async create(gameData: {
-    hostUserId: string;
-    roomCode: string;
-    maxPlayers?: number;
-    gameDuration?: number;
-    startCapital?: number;
-  }): Promise<GameEntity> {
+  async create(gameData: Partial<GameEntity>): Promise<GameEntity> {
     const game = this.repository.create(gameData);
     return await this.repository.save(game);
   }
 
   async findById(id: string): Promise<GameEntity | null> {
-    return await this.repository.findOne({ where: { id } });
+    return await this.repository.findOne({
+      where: { id },
+      relations: ['players']
+    });
   }
 
   async findByRoomCode(roomCode: string): Promise<GameEntity | null> {
-    return await this.repository.findOne({ where: { roomCode } });
-  }
-
-  async findWithPlayers(id: string): Promise<GameEntity | null> {
     return await this.repository.findOne({
-      where: { id },
-      relations: ['players', 'players.user']
+      where: { roomCode },
+      relations: ['players']
     });
   }
 
@@ -51,71 +44,38 @@ export class GameRepository {
     });
   }
 
-  async updateStatus(id: string, status: GameStatus): Promise<void> {
-    await this.repository.update(id, { status });
-  }
-
-  async startGame(id: string): Promise<void> {
-    await this.repository.update(id, {
-      status: GameStatus.PLAYING,
-      startedAt: new Date()
-    });
-  }
-
-  async endGame(id: string): Promise<void> {
-    await this.repository.update(id, {
-      status: GameStatus.FINISHED,
-      endedAt: new Date()
-    });
-  }
-
-  async updateRound(id: string, round: number): Promise<void> {
-    await this.repository.update(id, { currentRound: round });
+  async update(id: string, updateData: Partial<GameEntity>): Promise<void> {
+    await this.repository.update(id, updateData);
   }
 
   async delete(id: string): Promise<void> {
     await this.repository.delete(id);
   }
 
-  async generateUniqueRoomCode(): Promise<string> {
-    let roomCode: string;
-    let exists: boolean;
-    
-    do {
-      roomCode = this.generateRoomCode();
-      exists = await this.checkRoomCodeExists(roomCode);
-    } while (exists);
-    
-    return roomCode;
+  async incrementPlayerCount(gameId: string): Promise<void> {
+    await this.repository.increment({ id: gameId }, 'currentPlayers', 1);
   }
 
-  private generateRoomCode(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 6; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+  async decrementPlayerCount(gameId: string): Promise<void> {
+    await this.repository.decrement({ id: gameId }, 'currentPlayers', 1);
   }
 
-  private async checkRoomCodeExists(roomCode: string): Promise<boolean> {
+  async isRoomCodeExists(roomCode: string): Promise<boolean> {
     const count = await this.repository.count({ where: { roomCode } });
     return count > 0;
   }
 
-  async getPlayerCount(gameId: string): Promise<number> {
-    const game = await this.repository.findOne({
-      where: { id: gameId },
-      relations: ['players']
+  async startGame(gameId: string): Promise<void> {
+    await this.repository.update(gameId, {
+      status: GameStatus.PLAYING,
+      startedAt: new Date()
     });
-    return game?.players?.length || 0;
   }
 
-  async canJoinGame(gameId: string): Promise<boolean> {
-    const game = await this.findWithPlayers(gameId);
-    if (!game || game.status !== GameStatus.WAITING) {
-      return false;
-    }
-    return game.players.length < game.maxPlayers;
+  async endGame(gameId: string): Promise<void> {
+    await this.repository.update(gameId, {
+      status: GameStatus.FINISHED,
+      endedAt: new Date()
+    });
   }
 }

@@ -3,8 +3,12 @@ import { DataSource } from 'typeorm';
 import dotenv from 'dotenv';
 import { GameEntity } from '../entities/GameEntity';
 import { PlayerEntity } from '../entities/PlayerEntity';
-import { UserEntity } from '../entities/UserEntity'; 
+import { UserEntity } from '../entities/UserEntity';
 import { StockTemplateEntity } from '../entities/StockTemplateEntity';
+import { StockGameEntity } from '../entities/StockGameEntity';
+import { TradeEntity } from '../entities/TradeEntity';
+import { HoldingEntity } from '../entities/HoldingEntity';
+
 dotenv.config();
 
 const connectionString = process.env.DATABASE_URL;
@@ -15,15 +19,31 @@ const password = process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD || 'pos
 const database = process.env.PGDATABASE || process.env.POSTGRES_DB || 'chicken_stock';
 
 export const AppDataSource = new DataSource(
-  connectionString
+   connectionString
     ? {
         type: 'postgres',
         url: connectionString,
-        synchronize: true,
-        logging: true,
-        entities: [GameEntity, PlayerEntity, UserEntity, StockTemplateEntity],
+        synchronize: process.env.NODE_ENV !== 'production', // 운영에서는 false
+        logging: false,
+        // process.env.NODE_ENV === 'development',
+        entities: [
+          GameEntity,
+          PlayerEntity,
+          UserEntity,
+          StockTemplateEntity,
+          StockGameEntity,
+          TradeEntity,
+          HoldingEntity
+        ],
         migrations: ['src/migrations/*.{ts,js}'],
-        migrationsRun: false,
+        migrationsRun: true,
+        // 연결 풀 설정
+        extra: {
+          max: 20, // 최대 연결 수
+          min: 5,  // 최소 연결 수
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 2000,
+        }
       }
     : {
         type: 'postgres',
@@ -32,11 +52,27 @@ export const AppDataSource = new DataSource(
         username,
         password,
         database,
-        synchronize: true,
-        logging: true,
-        entities: [GameEntity, PlayerEntity, UserEntity, StockTemplateEntity],
+        synchronize: process.env.NODE_ENV !== 'production',
+        logging: false,
+        // process.env.NODE_ENV === 'development',
+        entities: [
+          GameEntity,
+          PlayerEntity,
+          UserEntity,
+          StockTemplateEntity,
+          StockGameEntity,
+          TradeEntity,
+          HoldingEntity
+        ],
         migrations: ['src/migrations/*.{ts,js}'],
-        migrationsRun: false,
+        migrationsRun: true,
+        // 연결 풀 설정
+        extra: {
+          max: 20,
+          min: 5,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 2000,
+        }
       }
 );
 

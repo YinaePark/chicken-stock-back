@@ -1,3 +1,4 @@
+// src/repositories/playerRepository.ts
 import { Repository } from 'typeorm';
 import { AppDataSource } from '../config/data-source';
 import { PlayerEntity } from '../entities/PlayerEntity';
@@ -9,24 +10,15 @@ export class PlayerRepository {
     this.repository = AppDataSource.getRepository(PlayerEntity);
   }
 
-  async create(playerData: {
-    userId: string;
-    gameId: string;
-    nickname: string;
-    currentCash?: number;
-    totalAssetValue?: number;
-  }): Promise<PlayerEntity> {
+  async create(playerData: Partial<PlayerEntity>): Promise<PlayerEntity> {
     const player = this.repository.create(playerData);
     return await this.repository.save(player);
   }
 
   async findById(id: string): Promise<PlayerEntity | null> {
-    return await this.repository.findOne({ where: { id } });
-  }
-
-  async findByUserAndGame(userId: string, gameId: string): Promise<PlayerEntity | null> {
     return await this.repository.findOne({
-      where: { userId, gameId }
+      where: { id },
+      relations: ['user', 'game']
     });
   }
 
@@ -38,65 +30,30 @@ export class PlayerRepository {
     });
   }
 
-  async findWithUserAndGame(id: string): Promise<PlayerEntity | null> {
+  async findByUserId(userId: string): Promise<PlayerEntity[]> {
+    return await this.repository.find({
+      where: { userId },
+      relations: ['game'],
+      order: { joinedAt: 'DESC' }
+    });
+  }
+
+  async findByGameAndUser(gameId: string, userId: string): Promise<PlayerEntity | null> {
     return await this.repository.findOne({
-      where: { id },
+      where: { gameId, userId },
       relations: ['user', 'game']
     });
   }
 
-  async updatePortfolio(id: string, portfolioData: {
-    currentCash?: number;
-    totalAssetValue?: number;
-    profitLoss?: number;
-    profitRate?: number;
-  }): Promise<void> {
-    const updateData: Partial<PlayerEntity> = {};
-    
-    if (portfolioData.currentCash !== undefined) updateData.currentCash = portfolioData.currentCash;
-    if (portfolioData.totalAssetValue !== undefined) updateData.totalAssetValue = portfolioData.totalAssetValue;
-    if (portfolioData.profitLoss !== undefined) updateData.profitLoss = portfolioData.profitLoss;
-    if (portfolioData.profitRate !== undefined) updateData.profitRate = portfolioData.profitRate;
-    
+  async update(id: string, updateData: Partial<PlayerEntity>): Promise<void> {
     await this.repository.update(id, updateData);
-  }
-
-  async updateConnection(id: string, isConnected: boolean, socketId?: string): Promise<void> {
-    await this.repository.update(id, { isConnected, socketId });
-  }
-
-  async setReady(id: string, isReady: boolean): Promise<void> {
-    await this.repository.update(id, { isReady });
-  }
-
-  async updateCharacterAppearance(id: string, appearance: Record<string, any>): Promise<void> {
-    await this.repository.update(id, { characterAppearance: appearance });
-  }
-
-  async updateRanking(gameId: string): Promise<void> {
-    // 총 자산 가치 기준으로 랭킹 업데이트
-    const players = await this.repository.find({
-      where: { gameId },
-      order: { totalAssetValue: 'DESC' }
-    });
-
-    for (let i = 0; i < players.length; i++) {
-        const player = players[i];
-        if (player && player.id) {
-        await this.repository.update(player.id, { ranking: i + 1 });
-        }    
-    }
   }
 
   async delete(id: string): Promise<void> {
     await this.repository.delete(id);
   }
 
-  async deleteByUserAndGame(userId: string, gameId: string): Promise<void> {
-    await this.repository.delete({ userId, gameId });
-  }
-
-  async findLeaderboard(gameId: string): Promise<PlayerEntity[]> {
+  async getGameLeaderboard(gameId: string): Promise<PlayerEntity[]> {
     return await this.repository.find({
       where: { gameId },
       relations: ['user'],
@@ -104,32 +61,72 @@ export class PlayerRepository {
     });
   }
 
-  async findBySocketId(socketId: string): Promise<PlayerEntity | null> {
-    return await this.repository.findOne({
-      where: { socketId },
-      relations: ['user', 'game']
+  async updateCash(playerId: string, newCashAmount: number): Promise<void> {
+    await this.repository.update(playerId, { currentCash: newCashAmount });
+  }
+
+  async updateAssetValue(playerId: string, totalAssetValue: number): Promise<void> {
+    const profitLoss = totalAssetValue - 1000000; // 초기 자본 100만원
+    const profitRate = (profitLoss / 1000000) * 100;
+
+    await this.repository.update(playerId, {
+      totalAssetValue,
+      profitLoss,
+      profitRate
     });
   }
 
-  async checkUserInGame(userId: string, gameId: string): Promise<boolean> {
-    const count = await this.repository.count({
-      where: { userId, gameId }
-    });
-    return count > 0;
+  async setReady(playerId: string, isReady: boolean): Promise<void> {
+    await this.repository.update(playerId, { isReady });
   }
 
-  async getAllReadyPlayers(gameId: string): Promise<PlayerEntity[]> {
-    return await this.repository.find({
+  async setConnected(playerId: string, isConnected: boolean, socketId?: string): Promise<void> {
+    const updateData: Partial<PlayerEntity> = {
+      isConnected,
+      socketId: isConnected && socketId ? socketId : undefined
+    };
+    
+    await this.repository.update(playerId, updateData);
+  }
+
+  async updateRanking(gameId: string): Promise<void> {
+    const players = await this.repository.find({
+      where: { gameId },
+      order: { totalAssetValue: 'DESC' }
+    });
+
+    for (let i = 0; i < players.length; i++) {
+      const player = players[i];
+      if (player && player.id) {
+        await this.repository.update(player.id, { ranking: i + 1 });
+      }
+    }
+  }
+
+  async getReadyPlayersCount(gameId: string): Promise<number> {
+    return await this.repository.count({
       where: { gameId, isReady: true }
     });
   }
 
-  async areAllPlayersReady(gameId: string): Promise<boolean> {
-    const totalPlayers = await this.repository.count({ where: { gameId } });
-    const readyPlayers = await this.repository.count({ 
-      where: { gameId, isReady: true } 
+  async getConnectedPlayersCount(gameId: string): Promise<number> {
+    return await this.repository.count({
+      where: { gameId, isConnected: true }
     });
+  }
+
+  async getAllReadyForGame(gameId: string): Promise<boolean> {
+    const totalPlayers = await this.repository.count({ where: { gameId } });
+    const readyPlayers = await this.getReadyPlayersCount(gameId);
     
     return totalPlayers > 0 && totalPlayers === readyPlayers;
+  }
+
+  async resetAllReadyStatus(gameId: string): Promise<void> {
+    await this.repository.update({ gameId }, { isReady: false });
+  }
+
+  async deleteByGameId(gameId: string): Promise<void> {
+    await this.repository.delete({ gameId });
   }
 }
