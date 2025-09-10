@@ -8,30 +8,7 @@ import { TradeRepository } from '../repositories/tradeRepository';
 import { PlayerRepository } from '../repositories/playerRepository';
 import { HoldingRepository } from '../repositories/holdingRepository';
 import { StockGameRepository } from '../repositories/stockGameRepository';
-
-export interface TradeRequest {
-  playerId: string;
-  stockCode: string;
-  type: 'BUY' | 'SELL';
-  quantity: number;
-}
-
-export interface PortfolioData {
-  cash: number;
-  totalAssetValue: number;
-  profitLoss: number;
-  profitRate: number;
-  holdings: Array<{
-    stockCode: string;
-    stockName: string;
-    quantity: number;
-    averagePrice: number;
-    currentPrice: number;
-    currentValue: number;
-    profitLoss: number;
-    profitRate: number;
-  }>;
-}
+import { TradeRequest, PortfolioData } from '../interfaces/trade.interface';
 
 export class TradeService {
   private tradeRepository: TradeRepository;
