@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { GameService } from '../services/gameService';
 import { TradeService } from '../services/tradeService';
 import { TradeException } from '../exceptions/tradeExceptions';
@@ -215,7 +215,8 @@ export class GameController {
     }
   }
 
-  async executeTrade(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  // 수정된 executeTrade 메서드 - TradeException 처리 추가
+  async executeTrade(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { id: gameId } = req.params;
       const { playerId, stockCode, type, quantity } = req.body;
@@ -247,11 +248,24 @@ export class GameController {
         message: '거래가 성공적으로 체결되었습니다.'
       });
     } catch (error) {
-      next(error);
+      if (error instanceof TradeException) {
+        res.status(400).json({
+          success: false,
+          error: error.message,
+          code: error.code
+        });
+      } else {
+        console.error('거래 실행 오류:', error);
+        res.status(500).json({
+          success: false,
+          error: '거래 실행 중 오류가 발생했습니다.'
+        });
+      }
     }
   }
 
-  async getPortfolio(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  // 수정된 getPortfolio 메서드 - TradeException 처리 추가
+  async getPortfolio(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { id: gameId } = req.params;
       const { playerId } = req.query;
@@ -269,7 +283,19 @@ export class GameController {
         data: portfolio
       });
     } catch (error) {
-      next(error);
+      if (error instanceof TradeException) {
+        res.status(400).json({
+          success: false,
+          error: error.message,
+          code: error.code
+        });
+      } else {
+        console.error('포트폴리오 조회 오류:', error);
+        res.status(500).json({
+          success: false,
+          error: '포트폴리오 조회 중 오류가 발생했습니다.'
+        });
+      }
     }
   }
 
@@ -329,125 +355,124 @@ export class GameController {
     }
   }
 
-  // GameController에 추가
-async setPlayerReady(req: AuthenticatedRequest, res: Response): Promise<void> {
-  try {
-    const { id: gameId } = req.params;
-    const { isReady } = req.body;
-    const userId = req.user?.id;
+  async setPlayerReady(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { id: gameId } = req.params;
+      const { isReady } = req.body;
+      const userId = req.user?.id;
 
-    if (!userId) {
-      res.status(401).json({ success: false, error: '인증이 필요합니다.' });
-      return;
+      if (!userId) {
+        res.status(401).json({ success: false, error: '인증이 필요합니다.' });
+        return;
+      }
+
+      await this.gameService.setPlayerReady(gameId!, userId, isReady);
+      
+      res.json({
+        success: true,
+        message: `준비 상태가 ${isReady ? '완료' : '해제'}되었습니다.`
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '준비 상태 변경 실패'
+      });
     }
-
-    await this.gameService.setPlayerReady(gameId!, userId, isReady);
-    
-    res.json({
-      success: true,
-      message: `준비 상태가 ${isReady ? '완료' : '해제'}되었습니다.`
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error instanceof Error ? error.message : '준비 상태 변경 실패'
-    });
   }
-}
 
-async startGame(req: AuthenticatedRequest, res: Response): Promise<void> {
-  try {
-    const { id: gameId } = req.params;
-    const userId = req.user?.id;
+  async startGame(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { id: gameId } = req.params;
+      const userId = req.user?.id;
 
-    if (!userId) {
-      res.status(401).json({ success: false, error: '인증이 필요합니다.' });
-      return;
+      if (!userId) {
+        res.status(401).json({ success: false, error: '인증이 필요합니다.' });
+        return;
+      }
+
+      if (!gameId) {
+        res.status(400).json({ success: false, error: '게임 ID가 필요합니다.' });
+        return;
+      }
+
+      await this.gameService.startGame(gameId, userId);
+      
+      res.json({
+        success: true,
+        message: '게임이 성공적으로 시작되었습니다.'
+      });
+    } catch (error) {
+      console.error('게임 시작 오류:', error);
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '게임 시작 중 오류가 발생했습니다.'
+      });
     }
-
-    if (!gameId) {
-      res.status(400).json({ success: false, error: '게임 ID가 필요합니다.' });
-      return;
-    }
-
-    await this.gameService.startGame(gameId, userId);
-    
-    res.json({
-      success: true,
-      message: '게임이 성공적으로 시작되었습니다.'
-    });
-  } catch (error) {
-    console.error('게임 시작 오류:', error);
-    res.status(400).json({
-      success: false,
-      error: error instanceof Error ? error.message : '게임 시작 중 오류가 발생했습니다.'
-    });
   }
-}
 
-// 추가적으로 pauseGame, endGame 메서드도 필요할 수 있습니다
-async pauseGame(req: AuthenticatedRequest, res: Response): Promise<void> {
-  try {
-    const { id: gameId } = req.params;
-    const userId = req.user?.id;
+  async pauseGame(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { id: gameId } = req.params;
+      const userId = req.user?.id;
 
-    if (!userId) {
-      res.status(401).json({ success: false, error: '인증이 필요합니다.' });
-      return;
+      if (!userId) {
+        res.status(401).json({ success: false, error: '인증이 필요합니다.' });
+        return;
+      }
+
+      if (!gameId) {
+        res.status(400).json({ success: false, error: '게임 ID가 필요합니다.' });
+        return;
+      }
+
+      // GameService에 pauseGame 메서드가 있다면 호출
+      // await this.gameService.pauseGame(gameId, userId);
+      
+      res.json({
+        success: true,
+        message: '게임이 일시정지되었습니다.'
+      });
+    } catch (error) {
+      console.error('게임 일시정지 오류:', error);
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '게임 일시정지 중 오류가 발생했습니다.'
+      });
     }
-
-    if (!gameId) {
-      res.status(400).json({ success: false, error: '게임 ID가 필요합니다.' });
-      return;
-    }
-
-    // GameService에 pauseGame 메서드가 있다면 호출
-    // await this.gameService.pauseGame(gameId, userId);
-    
-    res.json({
-      success: true,
-      message: '게임이 일시정지되었습니다.'
-    });
-  } catch (error) {
-    console.error('게임 일시정지 오류:', error);
-    res.status(400).json({
-      success: false,
-      error: error instanceof Error ? error.message : '게임 일시정지 중 오류가 발생했습니다.'
-    });
   }
-}
 
-async endGame(req: AuthenticatedRequest, res: Response): Promise<void> {
-  try {
-    const { id: gameId } = req.params;
-    const userId = req.user?.id;
+  async endGame(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { id: gameId } = req.params;
+      const userId = req.user?.id;
 
-    if (!userId) {
-      res.status(401).json({ success: false, error: '인증이 필요합니다.' });
-      return;
+      if (!userId) {
+        res.status(401).json({ success: false, error: '인증이 필요합니다.' });
+        return;
+      }
+
+      if (!gameId) {
+        res.status(400).json({ success: false, error: '게임 ID가 필요합니다.' });
+        return;
+      }
+
+      await this.gameService.endGame(gameId);
+      
+      res.json({
+        success: true,
+        message: '게임이 종료되었습니다.'
+      });
+    } catch (error) {
+      console.error('게임 종료 오류:', error);
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '게임 종료 중 오류가 발생했습니다.'
+      });
     }
-
-    if (!gameId) {
-      res.status(400).json({ success: false, error: '게임 ID가 필요합니다.' });
-      return;
-    }
-
-    await this.gameService.endGame(gameId);
-    
-    res.json({
-      success: true,
-      message: '게임이 종료되었습니다.'
-    });
-  } catch (error) {
-    console.error('게임 종료 오류:', error);
-    res.status(400).json({
-      success: false,
-      error: error instanceof Error ? error.message : '게임 종료 중 오류가 발생했습니다.'
-    });
   }
-}
 
-  async validateTrade(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  // 수정된 validateTrade 메서드 - TradeException 처리 추가
+  async validateTrade(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { id: gameId } = req.params;
       const { playerId, stockCode, type, quantity } = req.body;
@@ -469,7 +494,19 @@ async endGame(req: AuthenticatedRequest, res: Response): Promise<void> {
         data: validation
       });
     } catch (error) {
-      next(error);
+      if (error instanceof TradeException) {
+        res.status(400).json({
+          success: false,
+          error: error.message,
+          code: error.code
+        });
+      } else {
+        console.error('거래 검증 오류:', error);
+        res.status(500).json({
+          success: false,
+          error: '거래 검증 중 오류가 발생했습니다.'
+        });
+      }
     }
   }
 }
