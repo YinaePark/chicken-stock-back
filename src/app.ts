@@ -10,6 +10,7 @@ import { AppDataSource } from './config/data-source';
 import authRoutes from './routes/authRoutes';
 import gameRoutes from './routes/gameRoutes';
 import adminRoutes from './routes/adminRoutes';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 const app = express();
 const PORT = 3000;
@@ -88,14 +89,8 @@ console.log('DB config →', process.env.DATABASE_URL
     }
 );
 
-// 404 처리
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: `경로를 찾을 수 없습니다: ${req.originalUrl}`,
-    timestamp: new Date()
-  });
-});
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 AppDataSource.initialize()
   .then(async () => {
