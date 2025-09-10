@@ -1,4 +1,3 @@
-// src/repositories/holdingRepository.ts
 import { Repository } from 'typeorm';
 import { AppDataSource } from '../config/data-source';
 import { HoldingEntity } from '../entities/HoldingEntity';
