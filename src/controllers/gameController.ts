@@ -1,7 +1,7 @@
-// src/controllers/gameController.ts
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { GameService } from '../services/gameService';
 import { TradeService } from '../services/tradeService';
+import { TradeException } from '../exceptions/tradeExceptions';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -215,7 +215,7 @@ export class GameController {
     }
   }
 
-  async executeTrade(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async executeTrade(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id: gameId } = req.params;
       const { playerId, stockCode, type, quantity } = req.body;
@@ -234,16 +234,6 @@ export class GameController {
         return;
       }
 
-      if (!['BUY', 'SELL'].includes(type)) {
-        res.status(400).json({ success: false, error: '거래 타입은 BUY 또는 SELL이어야 합니다.' });
-        return;
-      }
-
-      if (quantity <= 0) {
-        res.status(400).json({ success: false, error: '거래 수량은 0보다 커야 합니다.' });
-        return;
-      }
-
       const trade = await this.tradeService.executeTrade(gameId, {
         playerId,
         stockCode,
@@ -257,15 +247,11 @@ export class GameController {
         message: '거래가 성공적으로 체결되었습니다.'
       });
     } catch (error) {
-      console.error('거래 실행 오류:', error);
-      res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : '거래 실행 중 오류가 발생했습니다.'
-      });
+      next(error);
     }
   }
 
-  async getPortfolio(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async getPortfolio(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id: gameId } = req.params;
       const { playerId } = req.query;
@@ -276,23 +262,14 @@ export class GameController {
         return;
       }
 
-      if (!gameId || !playerId) {
-        res.status(400).json({ success: false, error: '게임 ID와 플레이어 ID가 필요합니다.' });
-        return;
-      }
-
-      const portfolio = await this.tradeService.getPortfolio(gameId, playerId as string);
+      const portfolio = await this.tradeService.getPortfolio(gameId!, playerId as string);
       
       res.json({
         success: true,
         data: portfolio
       });
     } catch (error) {
-      console.error('포트폴리오 조회 오류:', error);
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : '포트폴리오 조회 중 오류가 발생했습니다.'
-      });
+      next(error);
     }
   }
 
@@ -470,7 +447,7 @@ async endGame(req: AuthenticatedRequest, res: Response): Promise<void> {
   }
 }
 
-  async validateTrade(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async validateTrade(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id: gameId } = req.params;
       const { playerId, stockCode, type, quantity } = req.body;
@@ -492,11 +469,7 @@ async endGame(req: AuthenticatedRequest, res: Response): Promise<void> {
         data: validation
       });
     } catch (error) {
-      console.error('거래 검증 오류:', error);
-      res.status(500).json({
-        success: false,
-        error: '거래 검증 중 오류가 발생했습니다.'
-      });
+      next(error);
     }
   }
 }
